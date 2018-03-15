@@ -3,20 +3,6 @@ import numpy as np
 import pickle
 
 
-def rodrigues_single(r):
-    theta = tf.norm(r)
-    theta = tf.maximum(theta, 1e-8)
-    r_hat = tf.reshape(r / theta, (3, 1))
-    cos = tf.cos(theta)
-    z = tf.zeros((1), dtype=tf.float32)
-    m = tf.reshape(
-        tf.stack((z, -r_hat[2], r_hat[1], r_hat[2], z, -r_hat[0], -r_hat[1],
-                  r_hat[0], z)), (3, 3))
-    R = cos * tf.eye(3, dtype=tf.float32) + (
-        1 - cos) * r_hat * tf.transpose(r_hat) + tf.sin(theta) * m
-    return R
-
-
 def rodrigues(r):
     theta = tf.norm(r, axis=(1, 2), keepdims=True)
     theta = tf.maximum(theta, 1e-8)
@@ -63,16 +49,17 @@ def smpl_model(model_path, betas, pose, trans):
     }
     v_shaped = tf.tensordot(shapedirs, betas, axes=[[2], [0]]) + v_template
     J = tf.matmul(J_regressor, v_shaped)
-    pose_cube = tf.reshape(pose[3:], (-1, 1, 3))
-    R_cube = rodrigues(pose_cube)
+    pose_cube = tf.reshape(pose, (-1, 1, 3))
+    R_cube_big = rodrigues(pose_cube)
+    R_cube = R_cube_big[1:]
     I_cube = tf.expand_dims(tf.eye(3, dtype=tf.float32), axis=0) + tf.zeros((R_cube.get_shape()[0], 3, 3), dtype=tf.float32)
     lrotmin = tf.squeeze(tf.reshape((R_cube - I_cube), (-1, 1)))
     v_posed = v_shaped + tf.tensordot(posedirs, lrotmin, axes=[[2], [0]])
     pose = tf.reshape(pose, (-1, 3))
     results = []
-    results.append(with_zeros(tf.concat((rodrigues_single(pose[0, :]), tf.reshape(J[0, :], (3, 1))), axis=1)))
+    results.append(with_zeros(tf.concat((R_cube_big[0], tf.reshape(J[0, :], (3, 1))), axis=1)))
     for i in range(1, kintree_table.shape[1]):
-        results.append(tf.matmul(results[parent[i]], with_zeros(tf.concat((rodrigues_single(pose[i, :]), tf.reshape(J[i, :] - J[parent[i], :], (3, 1))), axis=1))))
+        results.append(tf.matmul(results[parent[i]], with_zeros(tf.concat((R_cube_big[i], tf.reshape(J[i, :] - J[parent[i], :], (3, 1))), axis=1))))
     stacked = tf.stack(results, axis=0)
     results = stacked - pack(tf.matmul(stacked, tf.reshape(tf.concat((J, tf.zeros((24, 1), dtype=tf.float32)), axis=1), (24, 4, 1))))
     T = tf.tensordot(weights, results, axes=((1), (0)))
@@ -97,9 +84,7 @@ if __name__ == '__main__':
     trans = tf.constant(trans, dtype=tf.float32)
 
     output, faces = smpl_model('./model.pkl', betas, pose, trans)
-
     sess = tf.Session()
-
     result = sess.run(output)
 
     outmesh_path = './smpl_tf.obj'

@@ -3,19 +3,6 @@ import pickle
 import cv2
 
 
-def rodrigues_single(r):
-    theta = np.linalg.norm(r)
-    if theta == 0:
-        return np.eye(3)
-    r_hat = np.expand_dims((r / theta), axis=1)
-    cos = np.cos(theta)
-    m = np.array([
-        0, -r_hat[2], r_hat[1], r_hat[2], 0, -r_hat[0], -r_hat[1], r_hat[0], 0
-    ]).reshape((3, 3))
-    R = cos * np.eye(3) + (1 - cos) * r_hat * r_hat.T + np.sin(theta) * m
-    return R
-
-
 def rodrigues(r):
     theta = np.linalg.norm(r, axis=(1, 2), keepdims=True)
     r_hat = r / (theta + 1e-8)
@@ -59,16 +46,17 @@ def smpl_model(model_path, betas, pose, trans):
     }
     v_shaped = shapedirs.dot(betas) + v_template
     J = J_regressor.dot(v_shaped)
-    pose_cube = pose[3:].reshape((-1, 1, 3))
-    R_cube = rodrigues(pose_cube)
+    pose_cube = pose.reshape((-1, 1, 3))
+    R_cube_big = rodrigues(pose_cube)
+    R_cube = R_cube_big[1:]
     I_cube = np.broadcast_to(np.expand_dims(np.eye(3), axis=0), (R_cube.shape[0], 3, 3))
     lrotmin = (R_cube - I_cube).ravel()
     v_posed = v_shaped + posedirs.dot(lrotmin)
     pose = pose.reshape((-1, 3))
     results = np.empty((kintree_table.shape[1], 4, 4))
-    results[0, :, :] = with_zeros(np.hstack((rodrigues_single(pose[0, :]), J[0, :].reshape((3, 1)))))
+    results[0, :, :] = with_zeros(np.hstack((R_cube_big[0], J[0, :].reshape((3, 1)))))
     for i in range(1, kintree_table.shape[1]):
-        results[i, :, :] = results[parent[i], :, :].dot(with_zeros(np.hstack((rodrigues_single(pose[i, :]), ((J[i, :] - J[parent[i], :]).reshape((3, 1)))))))
+        results[i, :, :] = results[parent[i], :, :].dot(with_zeros(np.hstack((R_cube_big[i], ((J[i, :] - J[parent[i], :]).reshape((3, 1)))))))
     results = results - pack(np.matmul(results, np.hstack((J, np.zeros((24, 1)))).reshape((24, 4, 1))))
     T = np.tensordot(weights, results, axes=((1), (0)))
     rest_shape_h = np.hstack((v_posed, np.ones((v_posed.shape[0], 1))))
@@ -80,24 +68,15 @@ def smpl_model(model_path, betas, pose, trans):
 if __name__ == '__main__':
     pose_size = 72
     beta_size = 10
-    trans = np.zeros(3)
 
     np.random.seed(9608)
     pose = (np.random.rand(pose_size) - 0.5) * 0.4
-    # pose[0:3] = np.array([0, np.pi, 0])
     betas = (np.random.rand(beta_size) - 0.5) * 0.06
-    # pose = np.zeros(pose_size)
-    # betas = np.zeros(beta_size)
     trans = np.zeros(3)
-
-    # scale = 450
-    # trans = np.array([0, 0.3, 5.5])
 
     result, faces = smpl_model('./model.pkl', betas, pose, trans)
 
-    # result *= scale
-
-    outmesh_path = './smpl.obj'
+    outmesh_path = './smpl_np.obj'
     with open(outmesh_path, 'w') as fp:
         for v in result:
             fp.write('v %f %f %f\n' % (v[0], v[1], v[2]))
