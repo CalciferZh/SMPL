@@ -27,15 +27,7 @@ def pack(x):
     return np.dstack((np.zeros((x.shape[0], 4, 3)), x))
 
 
-def smpl_model(model_path, trans, betas, pose=None, R=None):
-    if R is not None:
-        R_cube_big = R
-    elif pose is not None:
-        R_cube_big = rodrigues(np.reshape(pose, (-1, 1, 3)))
-    else:
-        print('Error: pose and R can not be both None.')
-        return None
-
+def smpl_model(model_path, trans, betas, pose):
     with open(model_path, 'rb') as f:
         params = pickle.load(f)
 
@@ -54,6 +46,8 @@ def smpl_model(model_path, trans, betas, pose=None, R=None):
     }
     v_shaped = shapedirs.dot(betas) + v_template
     J = J_regressor.dot(v_shaped)
+    pose_cube = pose.reshape((-1, 1, 3))
+    R_cube_big = rodrigues(pose_cube)
     R_cube = R_cube_big[1:]
     I_cube = np.broadcast_to(np.expand_dims(np.eye(3), axis=0), (R_cube.shape[0], 3, 3))
     lrotmin = (R_cube - I_cube).ravel()

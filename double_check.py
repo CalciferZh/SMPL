@@ -24,13 +24,8 @@ def tf_wrapper(trans, betas, pose=None, R=None):
     return result
 
 
-def np_wrapper(trans, betas, pose=None, R=None):
-    if pose is not None:
-        result, _ = smpl_np.smpl_model('./model.pkl', trans, betas, pose=pose)
-    elif R is not None:
-        result, _ = smpl_np.smpl_model('./model.pkl', trans, betas, R=R)
-    else:
-        return None
+def np_wrapper(trans, betas, pose):
+    result, _ = smpl_np.smpl_model('./model.pkl', trans, betas, pose)
     return result
 
 
@@ -46,6 +41,6 @@ if __name__ == '__main__':
     R = smpl_np.rodrigues(pose.reshape((-1, 1, 3)))
 
     tf_result = tf_wrapper(trans, betas, R=R)
-    np_result = np_wrapper(trans, betas, R=R)
+    np_result = np_wrapper(trans, betas, pose)
 
     print(compute_diff(tf_result, np_result))
