@@ -5,7 +5,8 @@ import cv2
 
 def rodrigues(r):
     theta = np.linalg.norm(r, axis=(1, 2), keepdims=True)
-    r_hat = r / (theta + 1e-8)
+    theta = np.maximum(theta, np.finfo(np.float64).tiny)
+    r_hat = r / theta
     cos = np.cos(theta) # theta is radius
     z_stick = np.zeros(theta.shape[0])
     m = np.dstack((z_stick, -r_hat[:, 0, 2], r_hat[:, 0, 1], r_hat[:, 0, 2], z_stick,

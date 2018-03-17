@@ -5,16 +5,16 @@ import pickle
 
 def rodrigues(r):
     theta = tf.norm(r, axis=(1, 2), keepdims=True)
-    theta = tf.maximum(theta, 1e-8)
+    theta = tf.maximum(theta, np.finfo(np.float64).tiny)
     r_hat = r / theta
     cos = tf.cos(theta)
-    z_stick = tf.zeros(theta.get_shape().as_list()[0], dtype=tf.float32)
+    z_stick = tf.zeros(theta.get_shape().as_list()[0], dtype=tf.float64)
     m = tf.stack(
         (z_stick, -r_hat[:, 0, 2], r_hat[:, 0, 1], r_hat[:, 0, 2], z_stick,
          -r_hat[:, 0, 0], -r_hat[:, 0, 1], r_hat[:, 0, 0], z_stick), axis=1)
     m = tf.reshape(m, (-1, 3, 3))
-    i_cube = tf.expand_dims(tf.eye(3, dtype=tf.float32), axis=0) + tf.zeros(
-        (theta.get_shape().as_list()[0], 3, 3), dtype=tf.float32)
+    i_cube = tf.expand_dims(tf.eye(3, dtype=tf.float64), axis=0) + tf.zeros(
+        (theta.get_shape().as_list()[0], 3, 3), dtype=tf.float64)
     A = tf.transpose(r_hat, (0, 2, 1))
     B = r_hat
     dot = tf.matmul(A, B)
@@ -23,22 +23,22 @@ def rodrigues(r):
 
 
 def with_zeros(x):
-    return tf.concat((x, tf.constant([[0.0, 0.0, 0.0, 1.0]], dtype=tf.float32)), axis=0)
+    return tf.concat((x, tf.constant([[0.0, 0.0, 0.0, 1.0]], dtype=tf.float64)), axis=0)
 
 
 def pack(x):
-    return tf.concat((tf.zeros((x.get_shape().as_list()[0], 4, 3), dtype=tf.float32), x), axis=2)
+    return tf.concat((tf.zeros((x.get_shape().as_list()[0], 4, 3), dtype=tf.float64), x), axis=2)
 
 
 def smpl_model(model_path, betas, pose, trans):
     with open(model_path, 'rb') as f:
         params = pickle.load(f)
 
-    J_regressor = tf.constant(np.array(params['J_regressor'].todense(), dtype=np.float32))
-    weights = tf.constant(params['weights'], dtype=np.float32)
-    posedirs = tf.constant(params['posedirs'], dtype=np.float32)
-    v_template = tf.constant(params['v_template'], dtype=np.float32)
-    shapedirs = tf.constant(params['shapedirs'], dtype=np.float32)
+    J_regressor = tf.constant(np.array(params['J_regressor'].todense(), dtype=np.float64))
+    weights = tf.constant(params['weights'], dtype=np.float64)
+    posedirs = tf.constant(params['posedirs'], dtype=np.float64)
+    v_template = tf.constant(params['v_template'], dtype=np.float64)
+    shapedirs = tf.constant(params['shapedirs'], dtype=np.float64)
     f = params['f']
 
     kintree_table = params['kintree_table']
@@ -52,7 +52,7 @@ def smpl_model(model_path, betas, pose, trans):
     pose_cube = tf.reshape(pose, (-1, 1, 3))
     R_cube_big = rodrigues(pose_cube)
     R_cube = R_cube_big[1:]
-    I_cube = tf.expand_dims(tf.eye(3, dtype=tf.float32), axis=0) + tf.zeros((R_cube.get_shape()[0], 3, 3), dtype=tf.float32)
+    I_cube = tf.expand_dims(tf.eye(3, dtype=tf.float64), axis=0) + tf.zeros((R_cube.get_shape()[0], 3, 3), dtype=tf.float64)
     lrotmin = tf.squeeze(tf.reshape((R_cube - I_cube), (-1, 1)))
     v_posed = v_shaped + tf.tensordot(posedirs, lrotmin, axes=[[2], [0]])
     pose = tf.reshape(pose, (-1, 3))
@@ -61,9 +61,9 @@ def smpl_model(model_path, betas, pose, trans):
     for i in range(1, kintree_table.shape[1]):
         results.append(tf.matmul(results[parent[i]], with_zeros(tf.concat((R_cube_big[i], tf.reshape(J[i, :] - J[parent[i], :], (3, 1))), axis=1))))
     stacked = tf.stack(results, axis=0)
-    results = stacked - pack(tf.matmul(stacked, tf.reshape(tf.concat((J, tf.zeros((24, 1), dtype=tf.float32)), axis=1), (24, 4, 1))))
+    results = stacked - pack(tf.matmul(stacked, tf.reshape(tf.concat((J, tf.zeros((24, 1), dtype=tf.float64)), axis=1), (24, 4, 1))))
     T = tf.tensordot(weights, results, axes=((1), (0)))
-    rest_shape_h = tf.concat((v_posed, tf.ones((v_posed.get_shape().as_list()[0], 1), dtype=tf.float32)), axis=1)
+    rest_shape_h = tf.concat((v_posed, tf.ones((v_posed.get_shape().as_list()[0], 1), dtype=tf.float64)), axis=1)
     v = tf.matmul(T, tf.reshape(rest_shape_h, (-1, 4, 1)))
     v = tf.reshape(v, (-1, 4))[:, :3]
     result = v + tf.reshape(trans, (1, 3))
@@ -79,9 +79,9 @@ if __name__ == '__main__':
     betas = (np.random.rand(beta_size) - 0.5) * 0.06
     trans = np.zeros(3)
 
-    pose = tf.constant(pose, dtype=tf.float32)
-    betas = tf.constant(betas, dtype=tf.float32)
-    trans = tf.constant(trans, dtype=tf.float32)
+    pose = tf.constant(pose, dtype=tf.float64)
+    betas = tf.constant(betas, dtype=tf.float64)
+    trans = tf.constant(trans, dtype=tf.float64)
 
     output, faces = smpl_model('./model.pkl', betas, pose, trans)
     sess = tf.Session()
