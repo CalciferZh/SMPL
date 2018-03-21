@@ -53,7 +53,6 @@ def smpl_model(model_path, betas, pose, trans):
     I_cube = np.broadcast_to(np.expand_dims(np.eye(3), axis=0), (R_cube.shape[0], 3, 3))
     lrotmin = (R_cube - I_cube).ravel()
     v_posed = v_shaped + posedirs.dot(lrotmin)
-    pose = pose.reshape((-1, 3))
     results = np.empty((kintree_table.shape[1], 4, 4))
     results[0, :, :] = with_zeros(np.hstack((R_cube_big[0], J[0, :].reshape((3, 1)))))
     for i in range(1, kintree_table.shape[1]):

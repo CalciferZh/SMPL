@@ -30,7 +30,7 @@ def pack(x):
     return tf.concat((tf.zeros((x.get_shape().as_list()[0], 4, 3), dtype=tf.float64), x), axis=2)
 
 
-def smpl_model(model_path, betas, pose, trans):
+def smpl_model(model_path, betas, pose, trans, simplify=False):
     with open(model_path, 'rb') as f:
         params = pickle.load(f)
 
@@ -51,11 +51,13 @@ def smpl_model(model_path, betas, pose, trans):
     J = tf.matmul(J_regressor, v_shaped)
     pose_cube = tf.reshape(pose, (-1, 1, 3))
     R_cube_big = rodrigues(pose_cube)
-    R_cube = R_cube_big[1:]
-    I_cube = tf.expand_dims(tf.eye(3, dtype=tf.float64), axis=0) + tf.zeros((R_cube.get_shape()[0], 3, 3), dtype=tf.float64)
-    lrotmin = tf.squeeze(tf.reshape((R_cube - I_cube), (-1, 1)))
-    v_posed = v_shaped + tf.tensordot(posedirs, lrotmin, axes=[[2], [0]])
-    pose = tf.reshape(pose, (-1, 3))
+    if simplify:
+        v_posed = v_shaped
+    else:
+        R_cube = R_cube_big[1:]
+        I_cube = tf.expand_dims(tf.eye(3, dtype=tf.float64), axis=0) + tf.zeros((R_cube.get_shape()[0], 3, 3), dtype=tf.float64)
+        lrotmin = tf.squeeze(tf.reshape((R_cube - I_cube), (-1, 1)))
+        v_posed = v_shaped + tf.tensordot(posedirs, lrotmin, axes=[[2], [0]])
     results = []
     results.append(with_zeros(tf.concat((R_cube_big[0], tf.reshape(J[0, :], (3, 1))), axis=1)))
     for i in range(1, kintree_table.shape[1]):
@@ -83,7 +85,7 @@ if __name__ == '__main__':
     betas = tf.constant(betas, dtype=tf.float64)
     trans = tf.constant(trans, dtype=tf.float64)
 
-    output, faces = smpl_model('./model.pkl', betas, pose, trans)
+    output, faces = smpl_model('./model.pkl', betas, pose, trans, True)
     sess = tf.Session()
     result = sess.run(output)
 
