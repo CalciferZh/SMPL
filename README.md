@@ -12,5 +12,6 @@ For more details about SMPL model, see [SMPL](http://smpl.is.tue.mpg.de/).
 ## Usage
 
 1. Download the model file [here](http://smpl.is.tue.mpg.de/downloads).
-2. Run `python preprocess.py /PATH/TO/THE/DOWNLOADED/MODEL` to preprocess the official model. `preprocess.py` will create a new file `model.pkl`. `smpl_np.py` and `smpl_tf.py` both rely on `model.pkl`.
+2. Run `python preprocess.py /PATH/TO/THE/DOWNLOADED/MODEL` to preprocess the official model. `preprocess.py` will create a new file `model.pkl`. `smpl_np.py` and `smpl_tf.py` both rely on `model.pkl`. NOTE: the official pickle model contains `chumpy` object, so `prerocess.py` requires `chumpy` to extract official model.
 3. Run `python smpl_np.py` to see the example.
+
