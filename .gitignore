@@ -1,3 +1,4 @@
 *.pkl
 *.obj
 __pycache__
+pose_prior/data
