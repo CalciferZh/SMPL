@@ -3,9 +3,27 @@ import xml.etree.ElementTree as ET
 import smpl_np
 
 
+def compute_plane(verts, faces, fidx):
+    v0, v1, v2 = verts[faces[fidx, 0]], verts[faces[fidx, 1]], verts[faces[fidx, 2]]
+    return v0, v1, v2
+
+
+def marker_face_weights(verts, faces, markers, correspondence):
+    weights = {}
+    for name, point in markers.items():
+        v0, v1, v2 = compute_plane(verts, faces, correspondence[name])
+        x1, y1, _ = v1 - v0
+        x2, y2, _ = v2 - v0
+        x3, y3, _ = point - v0
+        n = (x1 * y3 - x3 * y1) / (x1 * y2 - x2 * y1)
+        m = (x3 - n * x2) / x1
+        o = 1 - m - n
+        weights[name] = (o, m, n)
+    return weights
+
+
 def parse_marker_pp(path):
-    klist = []
-    plist = []
+    markers = {}
     root = ET.parse(path).getroot()
     for p in root.findall('point'):
         attrib = p.attrib
@@ -14,13 +32,11 @@ def parse_marker_pp(path):
             float(attrib['y']),
             float(attrib['z'])
         ])
-        klist.append(attrib['name'])
-        plist.append(coordinates)
-    points = np.stack(plist, axis=0)
-    return klist, points
+        markers[attrib['name']] = coordinates
+    return markers
 
 
-def marker_on_surface():
+def marker_face_corr():
     ret = {
         'LFWT': 6108,
         'LTHI': 5199, 
@@ -43,7 +59,7 @@ def marker_on_surface():
         'LSHN': 5280,
         'RSHN': 8115,
         'CLAV': 5047,
-        'RSHO': 11745
+        'RSHO': 11745,
         'RUPA': 11471,
         'LSHO': 4859,
         'C7': 12340,
@@ -86,3 +102,37 @@ def obj_save(path, vertices, faces=None):
             for f in faces + 1:
                 fp.write('f %d %d %d\n' % (f[0], f[1], f[2]))
 
+
+def compute_markers(verts, faces, weights, correspondence):
+    markers = {}
+    for name, weight in weights.items():
+        v0, v1, v2 = compute_plane(verts, faces, correspondence[name])
+        markers[name] = v0 * weight[0] + v1 * weight[1] + v2 * weight[2]
+    return markers
+
+
+if __name__ == '__main__':
+    path = './pose_prior/CMU_Mocap_Markers.pp'
+    markers = parse_marker_pp(path)
+    verts, faces = smpl_np.smpl_model(
+        'model.pkl',
+        np.zeros(10),
+        np.zeros((24, 3)),
+        np.zeros(3)
+    )
+    correspondence = marker_face_corr()
+    weights = marker_face_weights(verts, faces, markers, correspondence)
+
+    np.random.seed(9608)
+    pose = (np.random.rand(24, 3) - 0.5) * 0.4
+    beta = (np.random.rand(10) - 0.5) * 0.06
+    trans = np.zeros(3)
+    verts, faces = smpl_np.smpl_model(
+        'model.pkl',
+        beta,
+        pose,
+        trans
+    )
+    markers = compute_markers(verts, faces, weights, correspondence)
+    obj_save('markers.obj', markers.values())
+    obj_save('pose.obj', verts, faces)
