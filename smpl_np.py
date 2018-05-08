@@ -49,17 +49,17 @@ class SMPLModel():
         v_shaped = self.shapedirs.dot(self.beta) + self.v_template
         self.J = self.J_regressor.dot(v_shaped)
         pose_cube = self.pose.reshape((-1, 1, 3))
-        R_cube = self.rodrigues(pose_cube)
-        I_cube = np.broadcast_to(np.expand_dims(np.eye(3), axis=0), (R_cube.shape[0]-1, 3, 3))
-        lrotmin = (R_cube[1:] - I_cube).ravel()
+        self.R = self.rodrigues(pose_cube)
+        I_cube = np.broadcast_to(np.expand_dims(np.eye(3), axis=0), (self.R.shape[0]-1, 3, 3))
+        lrotmin = (self.R[1:] - I_cube).ravel()
         v_posed = v_shaped + self.posedirs.dot(lrotmin)
         results = np.empty((self.kintree_table.shape[1], 4, 4))
-        results[0, :, :] = self.with_zeros(np.hstack((R_cube[0], self.J[0, :].reshape([3, 1]))))
+        results[0, :, :] = self.with_zeros(np.hstack((self.R[0], self.J[0, :].reshape([3, 1]))))
         for i in range(1, self.kintree_table.shape[1]):
             results[i, :, :] = results[self.parent[i], :, :].dot(
                 self.with_zeros(
                     np.hstack(
-                        [R_cube[i], ((self.J[i, :] - self.J[self.parent[i], :]).reshape([3, 1]))]
+                        [self.R[i], ((self.J[i, :] - self.J[self.parent[i], :]).reshape([3, 1]))]
                     )
                 )
             )
