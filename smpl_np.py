@@ -104,6 +104,14 @@ class SMPLModel():
     def pack(self, x):
         return np.dstack((np.zeros((x.shape[0], 4, 3)), x))
 
+    def save_to_obj(self, path):
+        with open(path, 'w') as fp:
+            for v in self.verts:
+                fp.write('v %f %f %f\n' % (v[0], v[1], v[2]))
+            for f in self.faces + 1:
+                fp.write('f %d %d %d\n' % (f[0], f[1], f[2]))
+
+
 
 if __name__ == '__main__':
     smpl = SMPLModel('./model.pkl')
@@ -111,11 +119,6 @@ if __name__ == '__main__':
     pose = (np.random.rand(*smpl.pose_shape) - 0.5) * 0.4
     beta = (np.random.rand(*smpl.beta_shape) - 0.5) * 0.06
     trans = np.zeros(smpl.trans_shape)
-    faces = smpl.faces
-    verts = smpl.set_params(beta=beta, pose=pose, trans=trans)
-    outmesh_path = './smpl_np.obj'
-    with open(outmesh_path, 'w') as fp:
-        for v in verts:
-            fp.write('v %f %f %f\n' % (v[0], v[1], v[2]))
-        for f in faces + 1:
-            fp.write('f %d %d %d\n' % (f[0], f[1], f[2]))
+    smpl.set_params(beta=beta, pose=pose, trans=trans)
+    smpl.save_to_obj('./smpl_np.obj')
+

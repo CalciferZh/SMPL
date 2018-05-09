@@ -1,4 +1,4 @@
 *.pkl
 *.obj
-__pycache__
-pose_prior/data
+__pycache__/
+script.py
