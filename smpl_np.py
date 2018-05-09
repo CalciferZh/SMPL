@@ -46,30 +46,31 @@ class SMPLModel():
         return self.verts
 
     def update(self):
-        v_shaped = self.shapedirs.dot(self.beta) + self.v_template
-        self.J = self.J_regressor.dot(v_shaped)
+        v_shaped = self.shapedirs.dot(self.beta) + self.v_template # how beta affect body shape
+        self.J = self.J_regressor.dot(v_shaped) # joints location
         pose_cube = self.pose.reshape((-1, 1, 3))
-        self.R = self.rodrigues(pose_cube)
+        self.R = self.rodrigues(pose_cube) # rotation matrix for each joint
         I_cube = np.broadcast_to(np.expand_dims(np.eye(3), axis=0), (self.R.shape[0]-1, 3, 3))
         lrotmin = (self.R[1:] - I_cube).ravel()
-        v_posed = v_shaped + self.posedirs.dot(lrotmin)
-        results = np.empty((self.kintree_table.shape[1], 4, 4))
-        results[0, :, :] = self.with_zeros(np.hstack((self.R[0], self.J[0, :].reshape([3, 1]))))
+        v_posed = v_shaped + self.posedirs.dot(lrotmin) # how pose affect body shape in zero pose
+        G = np.empty((self.kintree_table.shape[1], 4, 4)) # world transformation of each joint
+        G[0] = self.with_zeros(np.hstack((self.R[0], self.J[0, :].reshape([3, 1]))))
         for i in range(1, self.kintree_table.shape[1]):
-            results[i, :, :] = results[self.parent[i], :, :].dot(
+            G[i] = G[self.parent[i]].dot(
                 self.with_zeros(
                     np.hstack(
                         [self.R[i], ((self.J[i, :] - self.J[self.parent[i], :]).reshape([3, 1]))]
                     )
                 )
             )
-        results = results - self.pack(
+        # remove the transformation due to the rest pose
+        G = G - self.pack(
             np.matmul(
-                results,
+                G,
                 np.hstack([self.J, np.zeros([24, 1])]).reshape([24, 4, 1])
                 )
             )
-        T = np.tensordot(self.weights, results, axes=[[1], [0]])
+        T = np.tensordot(self.weights, G, axes=[[1], [0]]) # transformation of each vertex
         rest_shape_h = np.hstack((v_posed, np.ones([v_posed.shape[0], 1])))
         v = np.matmul(T, rest_shape_h.reshape([-1, 4, 1])).reshape([-1, 4])[:, :3]
         self.verts = v + self.trans.reshape([1, 3])
