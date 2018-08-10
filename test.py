@@ -5,6 +5,18 @@ import tensorflow as tf
 
 
 def compute_diff(a, b):
+    """
+    Compute the max relative difference between ndarray a and b element-wisely.
+
+    Parameters:
+    ----------
+    a, b: ndarrays to be compared of same shape.
+
+    Return:
+    ------
+    The max relative difference.
+
+    """
     return np.max(np.abs(a - b) / np.minimum(a, b))
 
 
