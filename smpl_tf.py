@@ -17,9 +17,8 @@ def rodrigues(r):
   Rotation matrix of shape [batch_size, 3, 3].
 
   """
-  theta = tf.norm(r, axis=(1, 2), keepdims=True)
+  theta = tf.norm(r + tf.random_normal(r.shape, 0, 1e-8, dtype=tf.float64), axis=(1, 2), keepdims=True)
   # avoid divide by zero
-  theta = tf.maximum(theta, np.finfo(np.float64).tiny)
   r_hat = r / theta
   cos = tf.cos(theta)
   z_stick = tf.zeros(theta.get_shape().as_list()[0], dtype=tf.float64)
