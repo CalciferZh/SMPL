@@ -3,9 +3,9 @@ Numpy and Tensorflow implementation of SMPL model. For any questions, feel free 
 
 ## Overview
 
-I wrote this because the author-provided implementation was mainly based on [chumpy](https://github.com/mattloper/chumpy) in Python 2, which is kind of unpopular. Meanwhile, the official one cannot run on GPU.
+I wrote this because the author-provided implementation was mainly based on [chumpy](https://github.com/mattloper/chumpy) in Python 2, which is kind of unpopular. Meanwhile, the official version cannot run on GPU.
 
-This numpy version is faster (since some computation is re-wrote in a vectorized manner) and easier to understand (hope so), and the tensorflow version can run on GPU.
+This numpy version is faster (since some computations were rewrote in a vectorized manner) and easier to understand (hope so), and the TensorFlow version can run on GPU.
 
 For more details about SMPL model, see [SMPL](http://smpl.is.tue.mpg.de/).
 
