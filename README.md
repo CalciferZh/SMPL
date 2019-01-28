@@ -1,19 +1,26 @@
 # SMPL
-Numpy, Tensorflow and PyTorch implementation of SMPL model. For any questions, feel free to contact [me](https://github.com/CalciferZh/SMPL).
+
+Numpy, TensorFlow and PyTorch implementation of SMPL model.
 
 ## Overview
 
-### Update on 20190127 by [Lotayou](https://github.com/Lotayou)
-I write a PyTorch implementation based on CalciferZh's Tensorflow code, which supports batch processing and GPU training. The implementation is hosted in `smpl_torch.py` along with the testing example.
-
-The implementation is tested under Ubuntu 18.04, Python 3.6 and Pytorch 1.0.0 stable. The output is the same as the original Tensorflow implementation, as can be tested with `test.py`.
-
-#### Original Overview
-I wrote this because the author-provided implementation was mainly based on [chumpy](https://github.com/mattloper/chumpy) in Python 2, which is kind of unpopular. Meanwhile, the official version cannot run on GPU.
-
-This numpy version is faster (since some computations were rewrote in a vectorized manner) and easier to understand (hope so), and the TensorFlow version can run on GPU.
+The author-provided implementation was mainly based on [chumpy](https://github.com/mattloper/chumpy) in Python 2, which is kind of unpopular. Meanwhile, the official version cannot run on GPU. This project provides Numpy, TensorFlow and PyTorch implementation of SMPL model.
 
 For more details about SMPL model, see [SMPL](http://smpl.is.tue.mpg.de/).
+
+### Numpy and Tensorflow Implementation
+
+Contributor: [CalciferZh](https://github.com/CalciferZh).
+
+The numpy version is faster (since some computations were rewrote in a vectorized manner) and easier to understand (hope so), and the TensorFlow version can run on GPU.
+
+### PyTorch Implementation with Batch Input
+
+Contributor: [Lotayou](https://github.com/Lotayou).
+
+The PyTorch version is derived from the Tensorflow version, and in addition supports batch processing and GPU training. The implementation is hosted in `smpl_torch.py` along with the testing example.
+
+The implementation is tested under Ubuntu 18.04, Python 3.6 and Pytorch 1.0.0 stable. The output is the same as the original Tensorflow implementation, as can be tested with `test.py`.
 
 ## Usage
 

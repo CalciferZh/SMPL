@@ -6,6 +6,7 @@ import tensorflow as tf
 import torch
 import os
 
+
 def compute_diff(a, b):
     """
     Compute the max relative difference between ndarray a and b element-wisely.
@@ -20,7 +21,8 @@ def compute_diff(a, b):
 
     """
     return np.max(np.abs(a - b) / np.minimum(a, b))
-    
+
+
 def pytorch_wrapper(beta, pose, trans):
     device = torch.device('cuda')
     pose = torch.from_numpy(pose).type(torch.float64).to(device)
@@ -30,6 +32,7 @@ def pytorch_wrapper(beta, pose, trans):
     with torch.no_grad():
         result = model(beta, pose, trans)
     return result.cpu().numpy()
+
 
 def tf_wrapper(beta, pose, trans):
     beta = tf.constant(beta, dtype=tf.float64)
