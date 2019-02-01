@@ -3,7 +3,6 @@ import torch
 import torch.nn as nn
 import pickle
 import numpy as np
-from wrappers import *
 import scipy.sparse
 
 
@@ -75,47 +74,47 @@ class SMIL(nn.Module):
         R = cos * self.eye + (1 - cos) * dot + theta.sin() * m
         return R
 
-    def __init__(self, model_path, sparse=True):
-        # The sparse version uses around half the memory and is faster.
+    def __init__(self, model_path='./model.pkl', sparse=True):
         super().__init__()
 
-        self.model_path = model_path
-        with open(model_path, 'rb') as f:
-            params = pickle.load(f)
-            # The first three can be added simply:
-            registerbuffer = lambda name: self.register_buffer(name,
-                                                               torch.as_tensor(params[name]))
-            registerbuffer('weights')
-            registerbuffer('posedirs')
-            registerbuffer('v_template')
-            registerbuffer('shapedirs')
-
-            # Now for the more difficult...:
-            # We have to convert f from uint32 to int32. (This is the indexbuffer)
-            self.register_buffer('f', torch.as_tensor(params['f'].astype(np.int32)))
-            self.register_buffer('kintree_table', torch.as_tensor(params['kintree_table'].astype(np.int32)))
-
-            # J_regressor is a sparse tensor. This is (experimentally) supported in PyTorch.
-            J_regressor = params['J_regressor']
-            if scipy.sparse.issparse(J_regressor):
-                # If tensor is sparse (Which it is with SMPL/SMIL)
-                J_regressor = J_regressor.tocoo()
-                J_regressor = torch.sparse_coo_tensor([J_regressor.row, J_regressor.col],
-                                                       J_regressor.data,
-                                                       J_regressor.shape)
-                if not sparse:
-                    J_regressor = J_regressor.to_dense()
-            else:
-                J_regressor = torch.as_tensor(J_regressor)
-            self.register_buffer('J_regressor', J_regressor)
-
-        self.register_buffer('e4', self.posedirs.new_tensor([0, 0, 0, 1]))  # Cache this. (Saves a lot of time)
-        self.register_buffer('eye', torch.eye(3, dtype=self.e4.dtype, device=self.e4.device))  # And this.
-
-        # Set up the kinematic tree map.
         self.parent = None
-        self.set_parent()
-        # Make sure this tree map is reconstructed if/when model is loaded.
+        self.model_path = None
+        if model_path is not None:
+            with open(model_path, 'rb') as f:
+                self.model_path = model_path
+                params = pickle.load(f)
+                # The first three can be added simply:
+                registerbuffer = lambda name: self.register_buffer(name,
+                                                                   torch.as_tensor(params[name]))
+                registerbuffer('weights')
+                registerbuffer('posedirs')
+                registerbuffer('v_template')
+                registerbuffer('shapedirs')
+
+                # Now for the more difficult...:
+                # We have to convert f from uint32 to int32. (This is the indexbuffer)
+                self.register_buffer('f', torch.as_tensor(params['f'].astype(np.int32)))
+                self.register_buffer('kintree_table', torch.as_tensor(params['kintree_table'].astype(np.int32)))
+
+                # J_regressor is a sparse tensor. This is (experimentally) supported in PyTorch.
+                J_regressor = params['J_regressor']
+                if scipy.sparse.issparse(J_regressor):
+                    # If tensor is sparse (Which it is with SMPL/SMIL)
+                    J_regressor = J_regressor.tocoo()
+                    J_regressor = torch.sparse_coo_tensor([J_regressor.row, J_regressor.col],
+                                                          J_regressor.data,
+                                                          J_regressor.shape)
+                    if not sparse:
+                        J_regressor = J_regressor.to_dense()
+                else:
+                    J_regressor = torch.as_tensor(J_regressor)
+                self.register_buffer('J_regressor', J_regressor)
+
+                self.register_buffer('e4', self.posedirs.new_tensor([0, 0, 0, 1]))  # Cache this. (Saves a lot of time)
+                self.register_buffer('eye', torch.eye(3, dtype=self.e4.dtype, device=self.e4.device))  # And this.
+                self.set_parent()
+
+        # Make sure the tree map is reconstructed if/when model is loaded.
         self._register_state_dict_hook(self.set_parent)
 
     def set_parent(self, *args, **kwargs):
@@ -154,7 +153,6 @@ class SMIL(nn.Module):
         transform = torch.cat((rotation_matrix, translation.unsqueeze(2)), 2)
         return self.with_zeros(transform)
 
-    @timing
     def forward(self, beta, pose, trans=None, simplify=False):
         """This module takes betas and poses in a batched manner.
         A pose is 3 * K + 3 (= self.kintree_table.shape[1] * 3) parameters, where K is the number of joints.
@@ -208,11 +206,9 @@ class SMIL(nn.Module):
 
         return v, Jtr
 
-@timing
 def time_numpy(body_model, poses):
     return [body_model.set_params(pose.pose, pose.beta) for pose in poses]
 
-@timing
 def time_pytorch(body_model, betas, poses):
     for i in range(100):
         v = body_model(vbeta, vpose)
