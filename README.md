@@ -21,11 +21,13 @@ The numpy version is faster (since some computations were rewrote in a vectorize
 
 ### PyTorch Implementation with Batch Input
 
-Contributor: [Lotayou](https://github.com/Lotayou).
+Contributor: [Lotayou](https://github.com/Lotayou) [sebftw](https://github.com/sebftw)
 
 The PyTorch version is derived from the Tensorflow version, and in addition supports batch processing and GPU training. The implementation is hosted in `smpl_torch.py` along with the testing example.
 
 The implementation is tested under Ubuntu 18.04, Python 3.6 and Pytorch 1.0.0 stable. The output is the same as the original Tensorflow implementation, as can be tested with `test.py`.
+
+`SMIL_torch_batch.py` can be very fast, but limited by the memory. It also works with sparse tensors. (Saving a lot of said memory)
 
 ## Usage
 
