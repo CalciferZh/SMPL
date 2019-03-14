@@ -1,6 +1,6 @@
 # SMPL
 
-Numpy, TensorFlow and PyTorch implementation of SMPL model.
+Numpy, TensorFlow and PyTorch implementation of SMPL model. For C++ implementation (with PyTorch), please see this [repo](https://github.com/YeeCY/SMPLpp).
 
 **Important:** I **do not** provide model file due to copyright reasons.
 
