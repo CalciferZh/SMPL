@@ -4,7 +4,7 @@ Numpy, TensorFlow and PyTorch implementation of SMPL model. For C++ implementati
 
 **Important:** I **do not** provide model file due to copyright reasons.
 
-## Update Feb 2nd 2019
+## Update Feb 2 2019
 Now we have a faster PyTorch implementation, and we also support [SMIL](https://www.iosb.fraunhofer.de/servlet/is/82920/) model. For more details, please check [this](https://github.com/CalciferZh/SMPL/pull/11) PR.
 
 ## Overview
