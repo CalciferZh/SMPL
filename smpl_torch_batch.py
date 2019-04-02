@@ -150,7 +150,7 @@ class SMPLModel(Module):
       R_cube = R_cube_big[:, 1:, :, :]
       I_cube = (torch.eye(3, dtype=torch.float64).unsqueeze(dim=0) + \
         torch.zeros((batch_num, R_cube.shape[1], 3, 3), dtype=torch.float64)).to(self.device)
-      lrotmin = (R_cube - I_cube).reshape(batch_num, -1, 1).squeeze()
+      lrotmin = (R_cube - I_cube).reshape(batch_num, -1, 1).squeeze(dim=2)
       v_posed = v_shaped + torch.tensordot(lrotmin, self.posedirs, dims=([1], [2]))
 
     results = []
