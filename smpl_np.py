@@ -51,7 +51,7 @@ class SMPLModel():
     Set pose, shape, and/or translation parameters of SMPL model. Verices of the
     model will be updated and returned.
 
-    Prameters:
+    Parameters:
     ---------
     pose: Also known as 'theta', a [24,3] matrix indicating child joint rotation
     relative to parent joint. For root joint it's global orientation.

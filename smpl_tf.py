@@ -80,7 +80,7 @@ def smpl_model(model_path, betas, pose, trans, simplify=False):
   Construct a compute graph that takes in parameters and outputs a tensor as
   model vertices. Face indices are also returned as a numpy ndarray.
 
-  Prameters:
+  Parameters:
   ---------
   pose: Also known as 'theta', a [24,3] tensor indicating child joint rotation
   relative to parent joint. For root joint it's global orientation.
