@@ -2,7 +2,10 @@
 
 Numpy, TensorFlow and PyTorch implementation of SMPL model. For C++ implementation (with PyTorch), please see this [repo](https://github.com/YeeCY/SMPLpp).
 
-**Important:** I **do not** provide model file due to copyright reasons.
+**Notes:**
+* The model file **cannot** be provided due to copyright reasons.
+* This project **cannot** fit a SMPL model to a scan - you can check this [paper](https://ps.is.mpg.de/publications/shape_under_cloth-cvpr17).
+* This project **cannot** fit a SMPL model to a set of joint coordinates - you can check the concept "inverse kinematic fitting".
 
 ## Update Feb 2 2019
 Now we have a faster PyTorch implementation, and we also support [SMIL](https://www.iosb.fraunhofer.de/servlet/is/82920/) model. For more details, please check [this](https://github.com/CalciferZh/SMPL/pull/11) PR.
