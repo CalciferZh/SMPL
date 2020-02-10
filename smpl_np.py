@@ -106,7 +106,6 @@ class SMPLModel():
           )
         )
       )
-    # remove the transformation due to the rest pose
     G = G - self.pack(
       np.matmul(
         G,
