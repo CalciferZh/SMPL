@@ -57,7 +57,7 @@ class SMIL(nn.Module):
         """
         theta = torch.norm(r, dim=(1, 2), keepdim=True)
         # avoid division by zero
-        torch.max(theta, theta.new_full((1,), torch.finfo(theta.dtype).tiny), out=theta)
+        torch.max(theta, theta.new_full((1,), torch.finfo(theta.dtype).eps), out=theta)
         #The .tiny has to be uploaded to GPU, but self.regress_joints is such a big bottleneck it is not felt.
 
         r_hat = r / theta
