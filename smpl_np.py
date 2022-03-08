@@ -134,7 +134,7 @@ class SMPLModel():
     """
     theta = np.linalg.norm(r, axis=(1, 2), keepdims=True)
     # avoid zero divide
-    theta = np.maximum(theta, np.finfo(np.float64).eps)
+    theta = np.maximum(theta, np.finfo(r.dtype).eps)
     r_hat = r / theta
     cos = np.cos(theta)
     z_stick = np.zeros(theta.shape[0])
@@ -209,4 +209,3 @@ if __name__ == '__main__':
   trans = np.zeros(smpl.trans_shape)
   smpl.set_params(beta=beta, pose=pose, trans=trans)
   smpl.save_to_obj('./smpl_np.obj')
-
